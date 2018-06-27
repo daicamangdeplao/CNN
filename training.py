@@ -51,6 +51,10 @@ def convolutional_neural_network(x_plah, weights, biases):
 
 def train_neural_network(mnist_data, x_plah, y_plah, predictions, optimizer, loss):
     hm_epochs = 10
+    n_samples = mnist_data.data.shape[0]
+    n_batches = int(n_samples / batch_size)
+    features_train = mnist_data.data.astype(np.float32)
+    labels_train = one_hot_encoding(mnist_data.target)
 
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
@@ -58,16 +62,20 @@ def train_neural_network(mnist_data, x_plah, y_plah, predictions, optimizer, los
         for epoch in range(hm_epochs):
             total_loss = 0
             count = 0
-            for _ in range(int(mnist_data.train.num_examples / batch_size)):
-                features_train, labels_train = mnist_data.train.next_batch(batch_size)
+            for i in range(n_batches):
+                start = i * batch_size
+                end = i * batch_size + batch_size - 1
+
+                features_train = features_train[start: end]
+                labels_train = labels_train[start: end]
                 # print('======== DEBUG: {} '
                 #       'dtype of features_train {}, '
                 #       'type of features_train {}'.format(count, features_train.dtype, type(features_train)))
                 # print('======== DEBUG: {} '
                 #       'dtype of labels_train {}, '
                 #       'type of labels_train {}'.format(count, labels_train.dtype, type(labels_train)))
-                _, c = sess.run([optimizer, loss], feed_dict={x_plah: features_train, y_plah: labels_train})
-                total_loss += c
+                _, loss_value = sess.run([optimizer, loss], feed_dict={x_plah: features_train, y_plah: labels_train})
+                total_loss += loss_value
                 count += 1
 
             print('Epoch', epoch, 'completed out of', hm_epochs, 'loss:', total_loss)
@@ -76,7 +84,7 @@ def train_neural_network(mnist_data, x_plah, y_plah, predictions, optimizer, los
 def main():
     # TODO Load data
     print('Load data')
-    mnist_data = input_data.read_data_sets("/tmp/data/", one_hot=True)
+    mnist_data = fetch_mldata('MNIST original')
 
     # TODO Define placeholders
     print('Define placeholders')
